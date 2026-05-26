@@ -1,0 +1,138 @@
+openapi: 3.0.3
+info:
+  title: Tasks API
+  description: |
+    API de gestión de tareas - Demo de CI/CD con Spec Driven Development.
+    Esta especificación fue escrita ANTES del código de implementación.
+  version: 1.0.0
+  contact:
+    name: Ingeniería y Calidad de SW - 2da Instancia
+servers:
+  - url: http://localhost:8000
+    description: Servidor de desarrollo local
+  - url: https://ci-cd-demo.onrender.com
+    description: Servidor de producción
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Verifica que el servicio esté operativo
+      operationId: healthCheck
+      tags:
+        - System
+      responses:
+        '200':
+          description: Servicio operativo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /tasks:
+    get:
+      summary: Listar todas las tareas
+      operationId: listTasks
+      tags:
+        - Tasks
+      responses:
+        '200':
+          description: Lista de tareas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+    post:
+      summary: Crear una nueva tarea
+      operationId: createTask
+      tags:
+        - Tasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+      responses:
+        '201':
+          description: Tarea creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '422':
+          description: Datos inválidos
+
+  /tasks/{task_id}:
+    get:
+      summary: Obtener una tarea por ID
+      operationId: getTask
+      tags:
+        - Tasks
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Tarea encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Tarea no encontrada
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - version
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        version:
+          type: string
+          example: "1.0.0"
+
+    Task:
+      type: object
+      required:
+        - id
+        - title
+        - completed
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          example: 1
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: "Estudiar CI/CD"
+        completed:
+          type: boolean
+          example: false
+
+    TaskCreate:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: "Aprobar la segunda instancia"
+        completed:
+          type: boolean
+          default: false
