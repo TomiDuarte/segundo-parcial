@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: tasks-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass   # despliega solo si los checks de CI pasan
+    envVars:
+      - key: PORT
+        value: 8000
