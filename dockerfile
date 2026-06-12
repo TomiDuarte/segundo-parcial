@@ -14,6 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copiar el código de la aplicación
 COPY app/ ./app/
+COPY frontend.html .
 
 # Exponer el puerto de la app
 EXPOSE 8000
