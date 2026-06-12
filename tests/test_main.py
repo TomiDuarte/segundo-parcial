@@ -27,7 +27,7 @@ class TestHealthEndpoint:
 
     def test_health_returns_200(self, client: TestClient) -> None:
         response = client.get("/health")
-        assert response.status_code == 200
+        assert response.status_code == 999
 
     def test_health_returns_status_ok(self, client: TestClient) -> None:
         response = client.get("/health")
