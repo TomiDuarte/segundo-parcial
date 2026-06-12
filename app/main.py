@@ -1,5 +1,6 @@
 """Tasks API - implementación basada en specs/openapi.yaml."""
 from fastapi import FastAPI, HTTPException, status
+from fastapi.responses import FileResponse
 
 from app import __version__
 from app.models import HealthResponse, Task, TaskCreate
@@ -13,6 +14,11 @@ app = FastAPI(
 # Storage en memoria (suficiente para la demo)
 _tasks: dict[int, Task] = {}
 _next_id: int = 1
+
+
+@app.get("/", include_in_schema=False)
+def serve_frontend() -> FileResponse:
+    return FileResponse("frontend.html")
 
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])
