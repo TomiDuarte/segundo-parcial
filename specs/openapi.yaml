@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Tasks API
   description: |
-    API de gestión de tareas - Demo de CI/CD con Spec Driven Development.
+    API de gestión de tareas.
     Esta especificación fue escrita ANTES del código de implementación.
   version: 1.0.0
   contact:
