@@ -199,14 +199,9 @@
   </div>
 
   <script>
-    const API = (() => {
-      const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
-      return isLocal
-        ? "http://localhost:8000"
-        : "https://ci-cd-demo.onrender.com";
-    })();
+    const API = "";
 
-    document.getElementById("api-url-display").textContent = API;
+    document.getElementById("api-url-display").textContent = location.origin;
 
     async function checkHealth() {
       const badge = document.getElementById("health-badge");
