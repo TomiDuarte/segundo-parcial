@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tasks API</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    #health-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      background: #e5e7eb;
+      color: #6b7280;
+    }
+
+    #health-badge.ok   { background: #dcfce7; color: #16a34a; }
+    #health-badge.fail { background: #fee2e2; color: #dc2626; }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,.08);
+      margin-bottom: 1.5rem;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #374151;
+    }
+
+    form {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 0.6rem 0.9rem;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color .15s;
+    }
+
+    input[type="text"]:focus { border-color: #6366f1; }
+
+    button {
+      padding: 0.6rem 1.2rem;
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    button:hover { background: #4f46e5; }
+    button:disabled { background: #a5b4fc; cursor: not-allowed; }
+
+    #error-msg {
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: #dc2626;
+      min-height: 1.2em;
+    }
+
+    #tasks-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    #tasks-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: #f9fafb;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+
+    #tasks-list li .task-id {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      min-width: 1.5rem;
+      text-align: right;
+    }
+
+    #tasks-list li .task-title {
+      flex: 1;
+    }
+
+    #tasks-list li .task-status {
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      background: #fef9c3;
+      color: #a16207;
+    }
+
+    #tasks-list li.completed .task-title {
+      text-decoration: line-through;
+      color: #9ca3af;
+    }
+
+    #tasks-list li.completed .task-status {
+      background: #dcfce7;
+      color: #16a34a;
+    }
+
+    .empty {
+      text-align: center;
+      color: #9ca3af;
+      font-size: 0.9rem;
+      padding: 1.5rem 0;
+    }
+
+    .api-url {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .api-url span {
+      font-family: monospace;
+      background: #e5e7eb;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Tasks API</h1>
+      <div id="health-badge">comprobando...</div>
+    </header>
+
+    <p class="api-url">conectado a <span id="api-url-display"></span></p>
+
+    <div class="card">
+      <h2>Nueva tarea</h2>
+      <form id="create-form">
+        <input
+          type="text"
+          id="task-input"
+          placeholder="Título de la tarea..."
+          maxlength="200"
+          autocomplete="off"
+        />
+        <button type="submit" id="submit-btn">Agregar</button>
+      </form>
+      <div id="error-msg"></div>
+    </div>
+
+    <div class="card">
+      <h2>Tareas</h2>
+      <ul id="tasks-list">
+        <li class="empty">Cargando...</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const API = (() => {
+      const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+      return isLocal
+        ? "http://localhost:8000"
+        : "https://ci-cd-demo.onrender.com";
+    })();
+
+    document.getElementById("api-url-display").textContent = API;
+
+    async function checkHealth() {
+      const badge = document.getElementById("health-badge");
+      try {
+        const res = await fetch(`${API}/health`);
+        const data = await res.json();
+        badge.textContent = `${data.status} · v${data.version}`;
+        badge.className = "ok";
+      } catch {
+        badge.textContent = "sin conexión";
+        badge.className = "fail";
+      }
+    }
+
+    async function loadTasks() {
+      const list = document.getElementById("tasks-list");
+      try {
+        const res = await fetch(`${API}/tasks`);
+        const tasks = await res.json();
+        if (tasks.length === 0) {
+          list.innerHTML = '<li class="empty">No hay tareas todavía.</li>';
+          return;
+        }
+        list.innerHTML = tasks.map(t => `
+          <li class="${t.completed ? "completed" : ""}">
+            <span class="task-id">#${t.id}</span>
+            <span class="task-title">${escapeHtml(t.title)}</span>
+            <span class="task-status">${t.completed ? "completada" : "pendiente"}</span>
+          </li>
+        `).join("");
+      } catch {
+        list.innerHTML = '<li class="empty">Error al cargar las tareas.</li>';
+      }
+    }
+
+    document.getElementById("create-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const input = document.getElementById("task-input");
+      const btn = document.getElementById("submit-btn");
+      const errorMsg = document.getElementById("error-msg");
+      const title = input.value.trim();
+
+      errorMsg.textContent = "";
+
+      if (!title) {
+        errorMsg.textContent = "El título no puede estar vacío.";
+        return;
+      }
+
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${API}/tasks`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title }),
+        });
+
+        if (res.status === 201) {
+          input.value = "";
+          await loadTasks();
+        } else if (res.status === 422) {
+          errorMsg.textContent = "Título inválido (mínimo 1 carácter, máximo 200).";
+        } else {
+          errorMsg.textContent = `Error inesperado (${res.status}).`;
+        }
+      } catch {
+        errorMsg.textContent = "No se pudo conectar con la API.";
+      } finally {
+        btn.disabled = false;
+        input.focus();
+      }
+    });
+
+    function escapeHtml(str) {
+      return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    }
+
+    checkHealth();
+    loadTasks();
+  </script>
+</body>
+</html>
