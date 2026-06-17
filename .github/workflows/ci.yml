@@ -137,3 +137,28 @@ jobs:
           tags: tasks-api:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # ═══════════════════════════════════════════════════════════════
+  # JOB FINAL: Notificación a Discord (Mecanismo de Feedback)
+  # ═══════════════════════════════════════════════════════════════
+  notify-discord:
+    name: Notify Discord
+    runs-on: ubuntu-latest
+    # Corre SIEMPRE: tanto si el pipeline pasó como si falló
+    if: always()
+    needs: [lint-and-test, validate-spec, sonarcloud, docker-build]
+
+    steps:
+      - name: Notificar resultado del pipeline
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          # El status se evalúa a partir de los jobs anteriores
+          status: ${{ contains(needs.*.result, 'failure') && 'failure' || contains(needs.*.result, 'cancelled') && 'cancelled' || 'success' }}
+          title: "CI/CD Pipeline — ${{ github.repository }}"
+          description: |
+            **Branch:** `${{ github.ref_name }}`
+            **Commit:** `${{ github.sha }}`
+            **Autor:** ${{ github.actor }}
+          username: "GitHub Actions"
+          nofail: true
