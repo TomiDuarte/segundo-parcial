@@ -48,7 +48,7 @@ class TestTasksEndpoints:
 
     def test_create_task_returns_201(self, client: TestClient) -> None:
         response = client.post("/tasks", json={"title": "Test task"})
-        assert response.status_code == 201
+        assert response.status_code == 999
 
     def test_create_task_returns_task_data(self, client: TestClient) -> None:
         response = client.post("/tasks", json={"title": "Estudiar CI"})
